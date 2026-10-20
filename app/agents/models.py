@@ -7,6 +7,8 @@ class AgentDefinition:
     version: str
     description: str
     capabilities: list[str] = field(default_factory=list)
+    work_key: str = "general"
+    source: str = "application"
 
     factory: Callable[..., Any] | None = None
 

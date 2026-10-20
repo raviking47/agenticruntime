@@ -1,0 +1,15 @@
+tools:
+- name: read_file
+  capabilities:
+  - file.read
+- name: write_file
+  capabilities:
+  - file.write
+- name: web_search
+  capabilities:
+  - web.search
+agents:
+- name: research_agent
+  capabilities:
+  - web_search
+  - write_file

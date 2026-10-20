@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.registry_instance import agent_registry
+from app.templates.builtin_tools import reset_search_budget, set_search_budget
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -37,7 +38,25 @@ async def run_agent(agent_name: str, request: AgentRequest):
 
     try:
         logger.info("Invoking agent: agent=%s", definition.name)
-        result = await agent.run(request.message)
+        if hasattr(agent, "run"):
+            result = await agent.run(request.message)
+        else:
+            search_budget_token = set_search_budget(1)
+            try:
+                result_data = await agent.ainvoke(
+                    {
+                        "messages": [
+                            {
+                                "role": "user",
+                                "content": request.message,
+                            }
+                        ]
+                    },
+                    config={"recursion_limit": 6},
+                )
+            finally:
+                reset_search_budget(search_budget_token)
+            result = result_data["messages"][-1].content
         logger.info("Agent completed: agent=%s result_type=%s", definition.name, type(result).__name__)
     except Exception as exc:
         logger.exception("Agent execution failed: %s", definition.name)
